@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>1v1 — Luca vs Sofi</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root {
+  --luca: #ff3b3b;
+  --luca-glow: rgba(255,59,59,0.4);
+  --sofi: #c44dff;
+  --sofi-glow: rgba(196,77,255,0.4);
+  --bg: #0a0a0a;
+  --surface: rgba(255,255,255,0.04);
+  --surface2: rgba(255,255,255,0.07);
+  --border: rgba(255,255,255,0.08);
+  --text: #f0f0f0;
+  --muted: rgba(255,255,255,0.45);
+}
+
+*, *::before, *::after {
+  margin: 0; padding: 0;
+  box-sizing: border-box;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding-bottom: 60px;
+}
+
+/* ── NOISE OVERLAY ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 200px;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.5;
+}
+
+/* ── AMBIENT LIGHTS ── */
+.ambient {
+  position: fixed;
+  border-radius: 50%;
+  filter: blur(120px);
+  pointer-events: none;
+  z-index: 0;
+  animation: breathe 6s ease-in-out infinite;
+}
+.ambient-luca {
+  width: 500px; height: 500px;
+  background: var(--luca);
+  opacity: 0.04;
+  top: -100px; left: -100px;
+}
+.ambient-sofi {
+  width: 500px; height: 500px;
+  background: var(--sofi);
+  opacity: 0.04;
+  bottom: -100px; right: -100px;
+  animation-delay: -3s;
+}
+@keyframes breathe {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+/* ── WRAPPER ── */
+.wrap {
+  position: relative;
+  z-index: 1;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* ── HEADER ── */
+header {
+  text-align: center;
+  padding: 50px 0 36px;
+  animation: fadeDown 0.6s ease both;
+}
+@keyframes fadeDown {
+  from { opacity:0; transform: translateY(-20px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+.title-tag {
+  display: inline-block;
+  font-size: 0.7rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+}
+
+header h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(3.5rem, 12vw, 7rem);
+  line-height: 0.9;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #fff 30%, rgba(255,255,255,0.4));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.vs-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 0.8rem;
+  letter-spacing: 3px;
+  color: var(--muted);
+}
+.vs-badge span { height:1px; width:40px; background: var(--border); }
+
+/* ── SCOREBOARD ── */
+.scoreboard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin: 0 0 36px;
+  animation: fadeUp 0.6s 0.15s ease both;
+}
+@keyframes fadeUp {
+  from { opacity:0; transform: translateY(20px); }
+  to   { opacity:1; transform: translateY(0); }
+}
+
+.score-side {
+  flex: 1;
+  padding: 28px 20px;
+  text-align: center;
+  border-radius: 20px 0 0 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-right: none;
+  position: relative;
+  overflow: hidden;
+  transition: background 0.3s;
+}
+.score-side.right {
+  border-radius: 0 20px 20px 0;
+  border-left: none;
+  border-right: 1px solid var(--border);
+}
+.score-side::before {
+  content:'';
+  position:absolute;
+  top:0; left:0; right:0;
+  height:3px;
+}
+.score-side.luca::before { background: var(--luca); }
+.score-side.sofi::before { background: var(--sofi); }
+
+.score-avatar {
+  width: 70px; height: 70px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 10px;
+  border: 2px solid var(--border);
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.score-side.luca .score-avatar { border-color: var(--luca); box-shadow: 0 0 20px var(--luca-glow); }
+.score-side.sofi .score-avatar { border-color: var(--sofi); box-shadow: 0 0 20px var(--sofi-glow); }
+
+.score-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.5rem;
+  letter-spacing: 2px;
+  margin-bottom: 4px;
+}
+.score-side.luca .score-name { color: var(--luca); }
+.score-side.sofi .score-name { color: var(--sofi); }
+
+.score-number {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 3.5rem;
+  line-height: 1;
+  transition: transform 0.2s;
+}
+.score-pop { animation: pop 0.3s ease; }
+@keyframes pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+.score-label { font-size: 0.7rem; color: var(--muted); letter-spacing: 2px; margin-top: 4px; text-transform: uppercase; }
+
+.score-divider {
+  width: 70px;
+  min-width: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--surface2);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 0;
+  z-index: 1;
+}
+.vs-text {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  color: var(--muted);
+}
+.total-games {
+  font-size: 0.6rem;
+  color: var(--muted);
+  letter-spacing: 2px;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+/* ── ACTION BUTTONS ── */
+.actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 36px;
+  animation: fadeUp 0.6s 0.25s ease both;
+}
+
+.action-btn {
+  padding: 18px 10px;
+  border: none;
+  border-radius: 14px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.4rem;
+  letter-spacing: 2px;
+  cursor: pointer;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: transform 0.15s, box-shadow 0.2s;
+  position: relative;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.action-btn::before {
+  content:'';
+  position:absolute;
+  inset:0;
+  background: rgba(255,255,255,0.12);
+  opacity:0;
+  transition:opacity 0.2s;
+}
+.action-btn:hover::before { opacity:1; }
+.action-btn:active { transform: scale(0.95) !important; }
+
+.btn-luca {
+  background: linear-gradient(135deg, #ff3b3b, #cc1a1a);
+  box-shadow: 0 0 30px var(--luca-glow), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.btn-luca:hover { transform: translateY(-3px); box-shadow: 0 0 50px var(--luca-glow); }
+
+.btn-sofi {
+  background: linear-gradient(135deg, #c44dff, #8b1de0);
+  box-shadow: 0 0 30px var(--sofi-glow), inset 0 1px 0 rgba(255,255,255,0.15);
+}
+.btn-sofi:hover { transform: translateY(-3px); box-shadow: 0 0 50px var(--sofi-glow); }
+
+.btn-icon { font-size: 1.2rem; }
+
+/* ── STATS GRID ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 36px;
+  animation: fadeUp 0.6s 0.35s ease both;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+}
+.stat-card h3 {
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+}
+.stat-row:last-child { margin-bottom: 0; }
+.stat-row .label { color: var(--muted); }
+.stat-row .val-luca { color: var(--luca); font-weight: 700; }
+.stat-row .val-sofi { color: var(--sofi); font-weight: 700; }
+
+/* WIN RATE BAR */
+.wr-bar-wrap {
+  margin-top: 6px;
+}
+.wr-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  margin-bottom: 6px;
+}
+.wr-bar {
+  height: 8px;
+  border-radius: 99px;
+  background: var(--border);
+  overflow: hidden;
+  display: flex;
+}
+.wr-fill-luca {
+  height: 100%;
+  background: var(--luca);
+  border-radius: 99px 0 0 99px;
+  transition: width 0.6s cubic-bezier(0.25,1,0.5,1);
+}
+.wr-fill-sofi {
+  height: 100%;
+  background: var(--sofi);
+  border-radius: 0 99px 99px 0;
+  transition: width 0.6s cubic-bezier(0.25,1,0.5,1);
+}
+
+/* ── CHART ── */
+.chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 36px;
+  animation: fadeUp 0.6s 0.45s ease both;
+}
+.chart-card h3 {
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+.chart-wrap { height: 220px; }
+
+/* ── MATCH HISTORY ── */
+.history-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 36px;
+  animation: fadeUp 0.6s 0.5s ease both;
+}
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.history-header h3 {
+  font-size: 0.65rem;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.history-empty {
+  text-align:center;
+  color: var(--muted);
+  font-size:0.85rem;
+  padding: 20px 0;
+}
+.match-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.match-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface2);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  animation: slideIn 0.25s ease;
+}
+@keyframes slideIn {
+  from { opacity:0; transform: translateX(-10px); }
+  to   { opacity:1; transform: translateX(0); }
+}
+.match-num { color: var(--muted); font-size: 0.7rem; min-width:24px; }
+.match-winner {
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+.match-winner.luca { color: var(--luca); }
+.match-winner.sofi { color: var(--sofi); }
+.match-time { color: var(--muted); font-size: 0.7rem; }
+.match-streak {
+  font-size: 0.65rem;
+  letter-spacing:1px;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.match-streak.luca { background: rgba(255,59,59,0.15); color: var(--luca); }
+.match-streak.sofi { background: rgba(196,77,255,0.15); color: var(--sofi); }
+
+/* ── STREAK BANNER ── */
+.streak-banner {
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 1px;
+  margin-bottom: 36px;
+  animation: fadeUp 0.6s 0.55s ease both;
+}
+.streak-banner strong { font-size: 1rem; }
+.streak-banner.luca strong { color: var(--luca); }
+.streak-banner.sofi strong { color: var(--sofi); }
+
+/* ── RESET ── */
+.reset-wrap {
+  display: flex;
+  justify-content: center;
+  animation: fadeUp 0.6s 0.6s ease both;
+}
+.reset-btn {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--muted);
+  padding: 12px 28px;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.8rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.reset-btn:hover {
+  border-color: #ff3b3b;
+  color: #ff3b3b;
+  box-shadow: 0 0 20px rgba(255,59,59,0.2);
+}
+.reset-btn:active { transform:scale(0.96); }
+
+/* ── TOAST ── */
+#toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: #1c1c1c;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 24px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  z-index: 999;
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  white-space: nowrap;
+  pointer-events: none;
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── RESPONSIVE ── */
+@media(max-width:520px) {
+  .score-avatar { width:55px; height:55px; }
+  .score-number { font-size:2.8rem; }
+  .score-divider { width:50px; min-width:50px; }
+  .stats-grid { grid-template-columns: 1fr; }
+  header h1 { font-size: clamp(3rem, 14vw, 5rem); }
+  .action-btn { font-size:1.2rem; padding:16px 6px; }
+}
+</style>
+</head>
+<body>
+
+<div class="ambient ambient-luca"></div>
+<div class="ambient ambient-sofi"></div>
+
+<div id="toast"></div>
+
+<div class="wrap">
+
+  <header>
+    <div class="title-tag">Temporada Activa</div>
+    <h1>HISTORIAL<br>1 vs 1</h1>
+    <div class="vs-badge"><span></span>LUCA vs SOFI<span></span></div>
+  </header>
+
+  <!-- SCOREBOARD -->
+  <div class="scoreboard" id="scoreboard">
+    <div class="score-side luca">
+      <img class="score-avatar" src="https://scontent.fcor10-3.fna.fbcdn.net/v/t39.30808-1/625896016_4200776400172447_4691218058021702289_n.jpg?stp=dst-jpg_s100x100_tt6&_nc_cat=100&ccb=1-7&_nc_sid=e99d92&_nc_eui2=AeHYjVCjErR49TgggrUYfF2pMknuxuMs3zEySe7G4yzfMajCqgqenneTVucerFjxyV2WcIxZIWhV7poK3r41S40M&_nc_ohc=3C1p2pHTkicQ7kNvwElYVxj&_nc_oc=Admx7fGF06GS6PC3tHVPL4W83Zi50mQ9fSJsxPvXDDjoQM77yElqyrTq1rxMSAD_4Bs&_nc_zt=24&_nc_ht=scontent.fcor10-3.fna&_nc_gid=ZDGnK88UdfpxXmPVtncqwQ&_nc_ss=8&oh=00_AfzP9HiYk-w0iXTHpTb8b51TM1KJ_438-npeOJmg46OZGw&oe=69AE8D88" alt="Luca">
+      <div class="score-name">Luca</div>
+      <div class="score-number" id="luca-score">0</div>
+      <div class="score-label">victorias</div>
+    </div>
+
+    <div class="score-divider">
+      <div class="vs-text">VS</div>
+      <div class="total-games" id="total-label">0<br>PARTIDAS</div>
+    </div>
+
+    <div class="score-side sofi right">
+      <img class="score-avatar" src="https://scontent.fcor10-3.fna.fbcdn.net/v/t39.30808-1/442412468_287208677800288_6420773116319085559_n.jpg?stp=dst-jpg_s200x200_tt6&_nc_cat=103&ccb=1-7&_nc_sid=e99d92&_nc_eui2=AeHCFTfOvkViHWaNiORTmnpd3_rxMl5Vgurf-vEyXlWC6lHXKI7CdvyeAkGDkilJ_2oK8OK-9iw0MdHaTfXAf8bA&_nc_ohc=RgUgLZOlaQAQ7kNvwFuzJAf&_nc_oc=AdmO-IQR3WOM0P7BAcepfOm84wHyAe7XSGPxYo50e1uNx9DI2BoRQ99EffzDys44YuY&_nc_zt=24&_nc_ht=scontent.fcor10-3.fna&_nc_gid=cQEkmSNAkNeAI32Is6J1fA&_nc_ss=8&oh=00_AfwOe0lCmrtcVzkIYpEdtTx0HNiA-vWHKdz7gyj4H3jl7A&oe=69AEA043" alt="Sofi">
+      <div class="score-name">Sofi</div>
+      <div class="score-number" id="sofi-score">0</div>
+      <div class="score-label">victorias</div>
+    </div>
+  </div>
+
+  <!-- BOTONES -->
+  <div class="actions">
+    <button class="action-btn btn-luca" onclick="ganaLuca()">
+      <span class="btn-icon">🔴</span> Gana Luca
+    </button>
+    <button class="action-btn btn-sofi" onclick="ganaSofi()">
+      <span class="btn-icon">🟣</span> Gana Sofi
+    </button>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <h3>Estadísticas</h3>
+      <div class="stat-row">
+        <span class="label">Jugadas</span>
+        <div style="display:flex;gap:14px">
+          <span class="val-luca" id="luca-total">—</span>
+          <span class="val-sofi" id="sofi-total">—</span>
+        </div>
+      </div>
+      <div class="stat-row">
+        <span class="label">Victorias</span>
+        <div style="display:flex;gap:14px">
+          <span class="val-luca" id="luca-victorias">—</span>
+          <span class="val-sofi" id="sofi-victorias">—</span>
+        </div>
+      </div>
+      <div class="stat-row">
+        <span class="label">Derrotas</span>
+        <div style="display:flex;gap:14px">
+          <span class="val-luca" id="luca-derrotas">—</span>
+          <span class="val-sofi" id="sofi-derrotas">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <h3>Win Rate</h3>
+      <div class="wr-labels">
+        <span style="color:var(--luca);font-weight:700" id="luca-wr">—</span>
+        <span style="color:var(--sofi);font-weight:700" id="sofi-wr">—</span>
+      </div>
+      <div class="wr-bar">
+        <div class="wr-fill-luca" id="wr-bar-luca" style="width:50%"></div>
+        <div class="wr-fill-sofi" id="wr-bar-sofi" style="width:50%"></div>
+      </div>
+      <div class="wr-labels" style="margin-top:10px;font-size:0.7rem;color:var(--muted)">
+        <span>Luca</span><span>Sofi</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHART -->
+  <div class="chart-card">
+    <h3>Comparativa visual</h3>
+    <div class="chart-wrap">
+      <canvas id="statsChart"></canvas>
+    </div>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="history-card">
+    <div class="history-header">
+      <h3>Últimas partidas</h3>
+      <span id="streak-info" style="font-size:0.75rem;color:var(--muted)"></span>
+    </div>
+    <div class="match-list" id="match-list">
+      <div class="history-empty">Aún no hay partidas registradas en esta sesión.</div>
+    </div>
+  </div>
+
+  <!-- RESET -->
+  <div class="reset-wrap">
+    <button class="reset-btn" onclick="confirmarReset()">⚠ Reiniciar estadísticas</button>
+  </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+
+  /* ── DATA ── */
+  let luca = JSON.parse(localStorage.getItem("lucaStats")) || { victorias:14, derrotas:11 };
+  let sofi = JSON.parse(localStorage.getItem("sofiStats")) || { victorias:11, derrotas:14 };
+  let historial = JSON.parse(localStorage.getItem("matchHistory")) || [];
+
+  function save(){
+    localStorage.setItem("lucaStats", JSON.stringify(luca));
+    localStorage.setItem("sofiStats", JSON.stringify(sofi));
+    localStorage.setItem("matchHistory", JSON.stringify(historial));
+  }
+
+  /* ── CHART ── */
+  const ctx = document.getElementById('statsChart').getContext('2d');
+  const chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Victorias','Derrotas'],
+      datasets: [
+        { label:'Luca', data:[0,0], backgroundColor:'rgba(255,59,59,0.7)', borderColor:'#ff3b3b', borderWidth:2, borderRadius:8 },
+        { label:'Sofi', data:[0,0], backgroundColor:'rgba(196,77,255,0.7)', borderColor:'#c44dff', borderWidth:2, borderRadius:8 }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      animation: { duration:600, easing:'easeOutQuart' },
+      plugins: {
+        legend: { labels:{ color:'rgba(255,255,255,0.6)', font:{family:'DM Sans',size:12} } }
+      },
+      scales: {
+        x: { ticks:{color:'rgba(255,255,255,0.4)'}, grid:{color:'rgba(255,255,255,0.04)'} },
+        y: { ticks:{color:'rgba(255,255,255,0.4)'}, grid:{color:'rgba(255,255,255,0.04)'}, beginAtZero:true }
+      }
+    }
+  });
+
+  /* ── TOAST ── */
+  let toastTimer;
+  function showToast(msg, color){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.borderColor = color || 'var(--border)';
+    t.style.color = color || 'var(--text)';
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  /* ── POP ANIMATION ── */
+  function popEl(id){
+    const el = document.getElementById(id);
+    el.classList.remove('score-pop');
+    void el.offsetWidth;
+    el.classList.add('score-pop');
+  }
+
+  /* ── STREAK ── */
+  function getStreak(){
+    if(!historial.length) return null;
+    const last = historial[historial.length-1].winner;
+    let count = 0;
+    for(let i = historial.length-1; i>=0; i--){
+      if(historial[i].winner === last) count++;
+      else break;
+    }
+    return { player: last, count };
+  }
+
+  /* ── RENDER HISTORY ── */
+  function renderHistory(){
+    const list = document.getElementById('match-list');
+    const streak = getStreak();
+    const info = document.getElementById('streak-info');
+
+    if(!historial.length){
+      list.innerHTML = '<div class="history-empty">Aún no hay partidas registradas.</div>';
+      info.textContent = '';
+      return;
+    }
+
+    if(streak && streak.count >= 2){
+      info.textContent = `🔥 ${streak.player} lleva ${streak.count} seguidas`;
+      info.style.color = streak.player === 'Luca' ? 'var(--luca)' : 'var(--sofi)';
+    } else {
+      info.textContent = '';
+    }
+
+    const recent = [...historial].reverse().slice(0,15);
+    list.innerHTML = recent.map((m, i) => {
+      const cls = m.winner.toLowerCase();
+      const num = historial.length - i;
+      return `<div class="match-item">
+        <span class="match-num">#${num}</span>
+        <span class="match-winner ${cls}">🏆 ${m.winner}</span>
+        <span class="match-time">${m.time}</span>
+      </div>`;
+    }).join('');
+  }
+
+  /* ── UPDATE ALL ── */
+  function update(){
+    const lt = luca.victorias + luca.derrotas;
+    const st = sofi.victorias + sofi.derrotas;
+    const total = lt;
+
+    document.getElementById('luca-score').textContent = luca.victorias;
+    document.getElementById('sofi-score').textContent = sofi.victorias;
+    document.getElementById('total-label').innerHTML = `${total}<br>PARTIDAS`;
+
+    document.getElementById('luca-total').textContent = lt;
+    document.getElementById('sofi-total').textContent = st;
+    document.getElementById('luca-victorias').textContent = luca.victorias;
+    document.getElementById('sofi-victorias').textContent = sofi.victorias;
+    document.getElementById('luca-derrotas').textContent = luca.derrotas;
+    document.getElementById('sofi-derrotas').textContent = sofi.derrotas;
+
+    const lucaWR = lt ? Math.round((luca.victorias/lt)*100) : 0;
+    const sofiWR = st ? Math.round((sofi.victorias/st)*100) : 0;
+    document.getElementById('luca-wr').textContent = lucaWR + '%';
+    document.getElementById('sofi-wr').textContent = sofiWR + '%';
+    document.getElementById('wr-bar-luca').style.width = lucaWR + '%';
+    document.getElementById('wr-bar-sofi').style.width = sofiWR + '%';
+
+    chart.data.datasets[0].data = [luca.victorias, luca.derrotas];
+    chart.data.datasets[1].data = [sofi.victorias, sofi.derrotas];
+    chart.update();
+
+    renderHistory();
+    save();
+  }
+
+  /* ── TIMESTAMP ── */
+  function timeNow(){
+    const d = new Date();
+    return d.toLocaleTimeString('es-AR', {hour:'2-digit', minute:'2-digit'});
+  }
+
+  /* ── ACTIONS ── */
+  window.ganaLuca = function(){
+    luca.victorias++;
+    sofi.derrotas++;
+    historial.push({ winner:'Luca', time: timeNow() });
+    popEl('luca-score');
+    showToast('🔴 ¡Punto para Luca!', 'var(--luca)');
+    update();
+  };
+
+  window.ganaSofi = function(){
+    sofi.victorias++;
+    luca.derrotas++;
+    historial.push({ winner:'Sofi', time: timeNow() });
+    popEl('sofi-score');
+    showToast('🟣 ¡Punto para Sofi!', 'var(--sofi)');
+    update();
+  };
+
+  window.confirmarReset = function(){
+    if(confirm('⚠ ¿Seguro que querés reiniciar todas las estadísticas?\n\nEsta acción no se puede deshacer.')){
+      localStorage.removeItem('lucaStats');
+      localStorage.removeItem('sofiStats');
+      localStorage.removeItem('matchHistory');
+      showToast('🔥 Estadísticas reiniciadas', '#ff3b3b');
+      setTimeout(() => location.reload(), 800);
+    }
+  };
+
+  update();
+});
+</script>
+</body>
+</html>
